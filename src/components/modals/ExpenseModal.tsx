@@ -63,21 +63,21 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-sm overflow-y-auto overscroll-none animate-in fade-in duration-200">
       <div 
         id="expense-modal-card"
-        className="w-full max-w-lg bg-[#0A162B] border border-rose-500/30 rounded-2xl shadow-2xl overflow-hidden my-8 text-slate-100 animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-lg bg-[#0A162B] border border-rose-500/30 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto sm:my-6 flex flex-col max-h-[calc(100dvh-16px)] sm:max-h-[90vh] text-slate-100"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#060D1A]/60">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
-              <Receipt className="w-5 h-5" />
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-[#060D1A]/90 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+              <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-wide leading-tight">
                 {initialData ? 'Editar Despesa' : 'Lançar Nova Despesa Operacional'}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400 leading-tight">
                 Custos com Chips NFC, Acrílicos, Transporte e Operação
               </p>
             </div>
@@ -85,13 +85,14 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
           <button
             id="close-expense-modal-btn"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 overscroll-contain">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Descrição da Despesa *
@@ -200,25 +201,26 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-            <button
-              id="cancel-expense-btn"
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              id="save-expense-btn"
-              type="submit"
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              {initialData ? 'Atualizar Despesa' : 'Salvar Despesa'}
-            </button>
-          </div>
         </form>
+
+        <div className="shrink-0 flex items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-800 bg-[#060D1A]/95 backdrop-blur-md">
+          <button
+            id="cancel-expense-btn"
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors min-h-[44px] flex items-center justify-center"
+          >
+            Cancelar
+          </button>
+          <button
+            id="save-expense-btn"
+            onClick={handleSubmit}
+            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all min-h-[44px]"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{initialData ? 'Atualizar Despesa' : 'Salvar Despesa'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

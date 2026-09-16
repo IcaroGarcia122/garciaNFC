@@ -65,22 +65,22 @@ export const DailyOutreachModal: React.FC<DailyOutreachModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-sm overflow-y-auto overscroll-none animate-in fade-in duration-200">
       <div 
         id="daily-outreach-modal-card"
-        className="w-full max-w-xl bg-[#0A162B] border border-[#0066FE]/40 rounded-3xl shadow-2xl overflow-hidden my-8 text-slate-100"
+        className="w-full max-w-xl bg-[#0A162B] border border-[#0066FE]/40 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto sm:my-6 flex flex-col max-h-[calc(100dvh-16px)] sm:max-h-[90vh] text-slate-100"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#060D1A]/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0066FE]/20 border border-[#0066FE]/50 flex items-center justify-center text-[#0066FE]">
-              <Users className="w-5 h-5" />
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-[#060D1A]/90 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#0066FE]/20 border border-[#0066FE]/50 flex items-center justify-center text-[#0066FE] shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-wide leading-tight">
                 Registrar Empresas Abordadas no Dia
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400 leading-tight">
                 Acompanhe o ritmo diário de visitas e prospecção de placas NFC
               </p>
             </div>
@@ -88,14 +88,15 @@ export const DailyOutreachModal: React.FC<DailyOutreachModalProps> = ({
           <button
             id="close-daily-outreach-modal-btn"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSave} className="p-6 space-y-6">
+        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 overscroll-contain">
           {/* Quick Metrics Bar */}
           <div className="grid grid-cols-3 gap-3 p-3 bg-[#060D1A] rounded-2xl border border-slate-800/80 text-center">
             <div>

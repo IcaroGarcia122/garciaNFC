@@ -223,8 +223,126 @@ export const SalesView: React.FC<SalesViewProps> = ({
         </div>
       </div>
 
-      {/* Sales List / Table */}
-      <div className="p-4 rounded-3xl bg-[#0A162B] border border-slate-800 overflow-x-auto shadow-xl">
+      {/* Sales List: Responsive Mobile Cards (md:hidden) + Desktop Table (hidden md:block) */}
+      <div className="md:hidden space-y-3">
+        {filteredSales.length === 0 ? (
+          <div className="p-6 rounded-2xl bg-[#0A162B] border border-slate-800 text-center text-slate-400 text-xs">
+            Nenhuma venda encontrada com os filtros selecionados.
+          </div>
+        ) : (
+          filteredSales.map(sale => {
+            const nfcBadge = NFC_STATUS_BADGES[sale.nfcStatus];
+            const Icon = nfcBadge.icon;
+            return (
+              <div 
+                key={sale.id}
+                className="p-4 rounded-2xl bg-[#0A162B] border border-slate-800 space-y-3 shadow-lg"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-white text-sm leading-tight">{sale.companyName}</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      {sale.contactName ? `${sale.contactName} • ` : ''}{formatDate(sale.saleDate)}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md bg-[#0066FE]/20 text-[#00D2FF] font-black text-xs shrink-0">
+                    {sale.quantity}x placa{sale.quantity > 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div className="text-xs text-slate-300 bg-[#060D1A] p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Modelo</span>
+                    <span className="font-medium text-slate-200">{sale.plateModel}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Valor Total</span>
+                    <span className="font-bold text-emerald-400 text-sm">{formatCurrency(sale.totalRevenue)}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2 rounded-lg bg-[#060D1A]/60 border border-slate-800/60">
+                    <span className="text-slate-400 block text-[10px]">Lucro Líquido</span>
+                    <span className="font-bold text-emerald-300">{formatCurrency(sale.grossProfit)}</span>
+                    <span className="text-[10px] text-emerald-400/80 ml-1">({sale.profitMarginPercent.toFixed(0)}%)</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-[#060D1A]/60 border border-slate-800/60">
+                    <span className="text-slate-400 block text-[10px]">Pagamento</span>
+                    <span className={`inline-block px-1.5 py-0.5 rounded font-semibold text-[10px] ${
+                      sale.paymentStatus === 'pago' 
+                        ? 'text-emerald-400 bg-emerald-500/15' 
+                        : 'text-amber-400 bg-amber-500/15'
+                    }`}>
+                      {sale.paymentStatus === 'pago' ? 'Pago' : sale.paymentStatus === 'pendente' ? 'Pendente' : 'Parcelado'}
+                    </span>
+                    <span className="text-slate-400 ml-1 text-[10px]">({sale.paymentMethod})</span>
+                  </div>
+                </div>
+
+                {/* NFC Status pill & Action buttons */}
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => handleCycleNfcStatus(sale)}
+                    title="Toque para alternar status do chip NFC"
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition-all ${nfcBadge.class}`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{nfcBadge.label}</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {sale.googleReviewUrl && (
+                      <button
+                        onClick={() => handleCopyUrl(sale.googleReviewUrl, sale.id)}
+                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Copiar URL para gravar"
+                      >
+                        {copiedId === sale.id ? (
+                          <Check className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+
+                    {sale.googleReviewUrl && (
+                      <a
+                        href={sale.googleReviewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-slate-400 hover:text-[#00D2FF] hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Abrir Link"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+
+                    <button
+                      onClick={() => onEditSale(sale)}
+                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                      title="Editar"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(sale)}
+                      className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Sales Table (hidden on mobile, visible on desktop) */}
+      <div className="hidden md:block p-4 rounded-3xl bg-[#0A162B] border border-slate-800 overflow-x-auto shadow-xl">
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="text-slate-400 border-b border-slate-800 pb-3">

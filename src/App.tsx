@@ -15,9 +15,10 @@ import { DailyOutreachModal } from './components/modals/DailyOutreachModal';
 
 import { Sale, Expense } from './types';
 import { GarciaIcon } from './components/GarciaLogo';
+import { LayoutDashboard, ShoppingBag, DollarSign, SmartphoneNfc, Plus } from 'lucide-react';
 
 const MainContent: React.FC = () => {
-  const { activeTab } = useApp();
+  const { activeTab, setActiveTab, stats } = useApp();
 
   // Modal States
   const [isDailyOutreachModalOpen, setIsDailyOutreachModalOpen] = useState(false);
@@ -57,7 +58,7 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#060D1A] text-slate-100 flex font-sans selection:bg-[#0066FE] selection:text-white">
+    <div className="min-h-screen bg-[#060D1A] text-slate-100 flex font-sans selection:bg-[#0066FE] selection:text-white pb-20 lg:pb-0">
       {/* Left Sidebar Navigation */}
       <Sidebar
         mobileOpen={mobileSidebarOpen}
@@ -78,7 +79,7 @@ const MainContent: React.FC = () => {
         />
 
         {/* Dynamic View Container */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
           {activeTab === 'dashboard' && (
             <DashboardView
               onOpenNewSale={handleOpenNewSale}
@@ -129,6 +130,71 @@ const MainContent: React.FC = () => {
           </div>
         </footer>
       </div>
+
+      {/* Mobile Floating Bottom Navigation Bar */}
+      <nav 
+        id="mobile-bottom-nav"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#060D1A]/95 backdrop-blur-xl border-t border-slate-800 px-3 py-2 flex items-center justify-around shadow-[0_-8px_30px_rgba(0,0,0,0.8)]"
+        aria-label="Navegação mobile rápida"
+      >
+        <button
+          id="mobile-tab-dashboard-btn"
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center justify-center p-1 min-w-[56px] rounded-xl transition-all ${
+            activeTab === 'dashboard' ? 'text-[#00D2FF] font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Início</span>
+        </button>
+
+        <button
+          id="mobile-tab-sales-btn"
+          onClick={() => setActiveTab('sales')}
+          className={`flex flex-col items-center justify-center p-1 min-w-[56px] rounded-xl relative transition-all ${
+            activeTab === 'sales' ? 'text-[#00D2FF] font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Vendas</span>
+          {stats.platesPendingNfc > 0 && (
+            <span className="absolute top-0 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          )}
+        </button>
+
+        {/* Center Prominent New Sale Button */}
+        <button
+          id="mobile-new-sale-center-btn"
+          onClick={handleOpenNewSale}
+          className="flex flex-col items-center justify-center -mt-5 p-3 rounded-full bg-gradient-to-r from-[#0052FF] to-[#0080FF] text-white shadow-[0_0_20px_rgba(0,102,254,0.6)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          title="Nova Venda (R$ 80)"
+          aria-label="Registrar Nova Venda"
+        >
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        <button
+          id="mobile-tab-finances-btn"
+          onClick={() => setActiveTab('finances')}
+          className={`flex flex-col items-center justify-center p-1 min-w-[56px] rounded-xl transition-all ${
+            activeTab === 'finances' ? 'text-[#00D2FF] font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <DollarSign className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Finanças</span>
+        </button>
+
+        <button
+          id="mobile-tab-nfc-btn"
+          onClick={() => setActiveTab('nfc_tools')}
+          className={`flex flex-col items-center justify-center p-1 min-w-[56px] rounded-xl transition-all ${
+            activeTab === 'nfc_tools' ? 'text-[#00D2FF] font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <SmartphoneNfc className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Gravar NFC</span>
+        </button>
+      </nav>
 
       {/* Modals */}
       <DailyOutreachModal

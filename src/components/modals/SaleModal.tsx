@@ -175,45 +175,46 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-sm overflow-y-auto overscroll-none animate-in fade-in duration-200">
       <div 
         id="sale-modal-card"
-        className="w-full max-w-2xl bg-[#0A162B] border border-[#0066FE]/40 rounded-3xl shadow-2xl overflow-hidden my-8 text-slate-100"
+        className="w-full max-w-2xl bg-[#0A162B] border border-[#0066FE]/40 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto sm:my-6 flex flex-col max-h-[calc(100dvh-16px)] sm:max-h-[90vh] text-slate-100"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#060D1A]/70">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0066FE]/20 border border-[#0066FE]/50 flex items-center justify-center text-[#0066FE]">
-              <ShoppingBag className="w-5 h-5" />
+        {/* Header - Always visible at top */}
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-[#060D1A]/95 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#0066FE]/20 border border-[#0066FE]/50 flex items-center justify-center text-[#0066FE] shrink-0">
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-wide leading-tight">
                 {saleToEdit ? 'Editar Venda de Placa NFC' : 'Registrar Nova Venda de Placas NFC'}
               </h2>
-              <p className="text-xs text-slate-400">
-                Preço Padrão: R$ 80,00 por plaquinha • Custo de Fabricação: R$ 12,80
+              <p className="text-[11px] sm:text-xs text-slate-400 leading-tight">
+                Preço Padrão: R$ 80,00 • Custo de Fabricação: R$ 12,80
               </p>
             </div>
           </div>
           <button
             id="close-sale-modal-btn"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Form - Smooth internal scrolling on mobile & desktop */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 overscroll-contain">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {/* Empresa Nome */}
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Nome da Empresa Compradora *
               </label>
               <div className="relative">
-                <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3.5 sm:top-3" />
                 <input
                   id="sale-company-input"
                   type="text"
@@ -221,7 +222,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   placeholder="Nome da loja, restaurante, barbearia, clínica..."
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
                 />
               </div>
             </div>
@@ -235,7 +236,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 id="sale-segment-select"
                 value={segment}
                 onChange={(e) => setSegment(e.target.value as SegmentType)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"
               >
                 {SEGMENTS.map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -252,7 +253,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 id="sale-plate-model-select"
                 value={plateModel}
                 onChange={(e) => handleModelChange(e.target.value as NfcPlateModel)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-[#0066FE]/40 rounded-xl text-sm text-white focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-[#0066FE]/40 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"
               >
                 {PLATE_MODELS.map(m => (
                   <option key={m.model} value={m.model}>
@@ -274,7 +275,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 required
                 value={quantity}
                 onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white font-bold text-center focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white font-bold text-center focus:outline-none focus:border-[#0066FE]"
               />
             </div>
 
@@ -284,7 +285,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 Preço por Placa (R$)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">R$</span>
+                <span className="absolute left-3 top-3 sm:top-2.5 text-xs text-slate-400 font-bold">R$</span>
                 <input
                   id="sale-unit-price-input"
                   type="number"
@@ -292,7 +293,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   required
                   value={unitPrice}
                   onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white font-bold focus:outline-none focus:border-[#0066FE]"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white font-bold focus:outline-none focus:border-[#0066FE]"
                 />
               </div>
               <span className="text-[11px] text-blue-400">Preço padrão: R$ 80,00</span>
@@ -311,7 +312,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 )}
               </div>
               <div className="relative">
-                <Tag className="w-4 h-4 text-emerald-400 absolute left-3 top-3" />
+                <Tag className="w-4 h-4 text-emerald-400 absolute left-3 top-3.5 sm:top-3" />
                 <input
                   id="sale-discount-input"
                   type="number"
@@ -320,37 +321,37 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   placeholder="0.00"
                   value={discount === 0 ? '' : discount}
                   onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-emerald-500/40 rounded-xl text-sm text-white font-bold placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-emerald-500/40 rounded-xl text-base sm:text-sm text-white font-bold placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
               {/* Quick Discount chips */}
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="text-[10px] text-slate-500">Atalhos:</span>
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-400">Atalhos:</span>
                 <button
                   type="button"
                   onClick={() => setDiscount(0)}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  className="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
                 >
                   Sem desc.
                 </button>
                 <button
                   type="button"
                   onClick={() => setDiscount(10)}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700/50"
+                  className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700/50"
                 >
                   R$ 10 off
                 </button>
                 <button
                   type="button"
                   onClick={() => setDiscount(20)}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700/50"
+                  className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700/50"
                 >
                   R$ 20 off
                 </button>
                 <button
                   type="button"
                   onClick={() => setDiscount(Math.round(subtotal * 0.1))}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 hover:bg-blue-900/60 text-blue-300 border border-blue-700/50"
+                  className="text-[10px] px-2 py-0.5 rounded bg-blue-950/60 hover:bg-blue-900/60 text-blue-300 border border-blue-700/50"
                 >
                   10% off
                 </button>
@@ -363,7 +364,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 Custo de Fabricação por Placa (R$)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">R$</span>
+                <span className="absolute left-3 top-3 sm:top-2.5 text-xs text-slate-400 font-bold">R$</span>
                 <input
                   id="sale-unit-cost-input"
                   type="number"
@@ -371,7 +372,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   required
                   value={unitCost}
                   onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white font-bold focus:outline-none focus:border-[#0066FE]"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white font-bold focus:outline-none focus:border-[#0066FE]"
                 />
               </div>
               <span className="text-[11px] text-slate-400">Gasto padrão: R$ 12,80 (chip + acrílico + adesivo)</span>
@@ -379,7 +380,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
           </div>
 
           {/* Real-time Profit Preview Card */}
-          <div className="p-4 rounded-2xl bg-[#060D1A] border border-[#0066FE]/40 space-y-2.5">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#060D1A] border border-[#0066FE]/40 space-y-2.5">
             <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800">
               <span className="flex items-center gap-1.5 text-blue-300">
                 <Calculator className="w-3.5 h-3.5" />
@@ -390,22 +391,22 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
+              <div className="p-2 rounded-xl bg-slate-900/60">
                 <span className="text-[10px] text-slate-400 block uppercase font-semibold">Subtotal</span>
                 <span className="text-sm font-bold text-white">{formatCurrency(subtotal)}</span>
               </div>
-              <div>
+              <div className="p-2 rounded-xl bg-slate-900/60">
                 <span className="text-[10px] text-slate-400 block uppercase font-semibold">Desconto</span>
                 <span className={`text-sm font-bold ${discount > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
                   {discount > 0 ? `- ${formatCurrency(discount)}` : 'R$ 0,00'}
                 </span>
               </div>
-              <div>
+              <div className="p-2 rounded-xl bg-slate-900/60">
                 <span className="text-[10px] text-slate-400 block uppercase font-semibold">Total Cobrado</span>
                 <span className="text-base font-black text-white">{formatCurrency(calculatedRevenue)}</span>
               </div>
-              <div className="bg-emerald-500/10 rounded-xl p-1 border border-emerald-500/20">
+              <div className="bg-emerald-500/10 rounded-xl p-2 border border-emerald-500/20">
                 <span className="text-[10px] text-emerald-400 block uppercase font-bold">Lucro Líquido</span>
                 <span className="text-base font-black text-emerald-400">{formatCurrency(calculatedProfit)}</span>
                 <span className="text-[10px] text-emerald-300 font-bold block -mt-0.5">
@@ -416,7 +417,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
           </div>
 
           {/* Contato, Telefone e Data */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Contato Responsável
@@ -426,7 +427,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 placeholder="Ex: Carlos (Gerente)"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
               />
             </div>
 
@@ -439,7 +440,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 placeholder="(11) 98765-4321"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
               />
             </div>
 
@@ -452,13 +453,13 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 required
                 value={saleDate}
                 onChange={(e) => setSaleDate(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"
               />
             </div>
           </div>
 
           {/* Pagamento e Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Forma de Pagamento
@@ -466,7 +467,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"
               >
                 {PAYMENT_METHODS.map(m => (
                   <option key={m} value={m}>{m}</option>
@@ -481,7 +482,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               <select
                 value={paymentStatus}
                 onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
-                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-[#0066FE]"
+                className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"
               >
                 <option value="pago">Pago (Recebido integralmente)</option>
                 <option value="pendente">Pendente (A receber na entrega)</option>
@@ -498,7 +499,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
             <select
               value={nfcStatus}
               onChange={(e) => setNfcStatus(e.target.value as NfcProductionStatus)}
-              className="w-full px-3 py-2.5 bg-[#060D1A] border border-[#0066FE]/40 rounded-xl text-sm text-white focus:outline-none focus:border-[#0066FE]"
+              className="w-full px-3 py-2.5 bg-[#060D1A] border border-[#0066FE]/40 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"
             >
               <option value="aguardando_gravacao">⏳ Aguardando Gravação do Chip NFC</option>
               <option value="gravado_testado">✅ Chip NFC Gravado & Testado com Celular</option>
@@ -508,9 +509,9 @@ export const SaleModal: React.FC<SaleModalProps> = ({
 
           {/* Link do Google Maps com conversão inteligente */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Link do Google Maps / Place ID (Para Gravação no Chip)
+                Link do Google Maps / Place ID (Para Chip NFC)
               </label>
               {detectedUrlLabel && (
                 <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
@@ -520,7 +521,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               )}
             </div>
             <div className="relative">
-              <LinkIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <LinkIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3.5 sm:top-3" />
               <input
                 id="sale-google-url-input"
                 type="text"
@@ -541,8 +542,8 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 </a>
               )}
             </div>
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              Só de colar o link do Google Maps aqui, formatamos a URL direta de avaliação instantânea para o chip NFC!
+            <span className="text-[11px] text-slate-400 mt-1 block leading-tight">
+              Ao colar o link do Google Maps aqui, formatamos a URL direta de 5 estrelas para gravação no chip NFC!
             </span>
           </div>
 
@@ -559,26 +560,26 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               className="w-full px-3 py-2 bg-[#060D1A] border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE] resize-none"
             />
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              id="save-sale-submit-btn"
-              type="submit"
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0052FF] to-[#0072FF] hover:brightness-110 shadow-lg shadow-blue-500/25 transition-all"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>{saleToEdit ? 'Atualizar Venda' : 'Salvar Venda (R$ 80/placa)'}</span>
-            </button>
-          </div>
         </form>
+
+        {/* Actions - Sticky at bottom */}
+        <div className="shrink-0 flex items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-800 bg-[#060D1A]/95 backdrop-blur-md">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[44px] flex items-center justify-center"
+          >
+            Cancelar
+          </button>
+          <button
+            id="save-sale-submit-btn"
+            onClick={handleSubmit}
+            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#0052FF] to-[#0072FF] hover:brightness-110 shadow-lg shadow-blue-500/25 transition-all min-h-[44px]"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>{saleToEdit ? 'Atualizar Venda' : 'Salvar Venda (R$ 80/placa)'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
