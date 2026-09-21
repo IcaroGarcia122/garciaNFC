@@ -113,7 +113,20 @@ export const parseGoogleMapsInput = (input: string): GoogleReviewParseResult => 
     };
   }
 
-  const trimmed = input.trim();
+  let trimmed = input.trim();
+  let extractedName: string | undefined = undefined;
+
+  // Extrair URL limpa se o usuário colou do botão Compartilhar do celular
+  // Ex: "Confira Barbearia Dom Garcia no Google Maps: https://maps.app.goo.gl/xyz123"
+  const urlInText = trimmed.match(/(https?:\/\/[^\s"'<>]+)/i);
+  if (urlInText) {
+    const rawUrl = urlInText[1];
+    const textBefore = trimmed.slice(0, urlInText.index).replace(/Confira|no Google Maps|no Google|:|Veja|Avalie|Google Maps/gi, '').trim();
+    if (textBefore.length >= 2) {
+      extractedName = textBefore;
+    }
+    trimmed = rawUrl;
+  }
 
   // 1. Caso crítico: Detectar o link quebrado writereview?cid=... (que dá erro 404 no Google)
   const brokenWritereviewCid = trimmed.match(/search\.google\.com\/local\/writereview.*[?&]cid=([0-9]+)/i);
@@ -126,6 +139,7 @@ export const parseGoogleMapsInput = (input: string): GoogleReviewParseResult => 
       isDirect5Star: false,
       warning: 'O Google não aceita o parâmetro "?cid=" no endereço "writereview" (gera erro 404 no servidor do Google). Para abrir direto a tela de 5 estrelas sem erro, o Google exige o Place ID (código ChIJ...) ou o link curto de avaliação.',
       cid,
+      businessName: extractedName,
       googleMapsUrl: `https://maps.google.com/?cid=${cid}`
     };
   }
@@ -243,9 +257,13 @@ export const parseGoogleMapsInput = (input: string): GoogleReviewParseResult => 
     return {
       reviewUrl: trimmed,
       sourceType: 'maps_shortlink',
-      label: 'Link de Compartilhamento do Google Maps',
+      label: extractedName 
+        ? `Link do Google Maps: ${extractedName}` 
+        : 'Link de Compartilhamento do Google Maps (Celular)',
       isDirect5Star: false,
-      googleMapsUrl: trimmed
+      businessName: extractedName,
+      googleMapsUrl: trimmed,
+      warning: 'Este é um link curto gerado pelo app Google Maps no celular. Ele abre a página da empresa no Google Maps. Para gravar 5 estrelas direto, use o Place ID ou o botão "Pedir Avaliações" do Google Meu Negócio.'
     };
   }
 

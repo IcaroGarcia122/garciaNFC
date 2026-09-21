@@ -37,12 +37,39 @@ export const NfcToolsView: React.FC = () => {
   const [proposalDiscount, setProposalDiscount] = useState(0);
   const [copiedProposal, setCopiedProposal] = useState(false);
 
+  const [isResolvingUrl, setIsResolvingUrl] = useState(false);
+
+  // Resolve shortlink (maps.app.goo.gl) to full 5-star review URL
+  const handleResolveShortlink = async (urlToResolve: string) => {
+    if (!urlToResolve || isResolvingUrl) return;
+    setIsResolvingUrl(true);
+    try {
+      const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(urlToResolve)}`);
+      const data = await res.json();
+      if (data.finalUrl) {
+        const parsed = parseGoogleMapsInput(data.finalUrl);
+        setParseResult(parsed);
+        if (parsed.reviewUrl) {
+          setGoogleMapsInput(parsed.reviewUrl);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao resolver link:', err);
+    } finally {
+      setIsResolvingUrl(false);
+    }
+  };
+
   // Instant link generation on input change
   const handleInputChange = (value: string) => {
     setGoogleMapsInput(value);
     if (value.trim()) {
       const result = parseGoogleMapsInput(value);
       setParseResult(result);
+      // Auto-resolve if maps.app.goo.gl or goo.gl/maps
+      if (result.sourceType === 'maps_shortlink' && result.reviewUrl) {
+        handleResolveShortlink(result.reviewUrl);
+      }
     } else {
       setParseResult({ reviewUrl: '', sourceType: 'raw_url', label: '', isDirect5Star: false });
     }
@@ -265,6 +292,23 @@ export const NfcToolsView: React.FC = () => {
                     <code className="text-emerald-300 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-800/40 font-mono font-bold">
                       {parseResult.placeId}
                     </code>
+                  </div>
+                )}
+
+                {/* Mobile Link to 5-Star Direct Converter Button */}
+                {parseResult.sourceType === 'maps_shortlink' && !parseResult.isDirect5Star && (
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      disabled={isResolvingUrl}
+                      onClick={() => handleResolveShortlink(parseResult.reviewUrl)}
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md"
+                    >
+                      <Sparkles className={`w-4 h-4 ${isResolvingUrl ? 'animate-spin' : 'text-yellow-300'}`} />
+                      <span>
+                        {isResolvingUrl ? 'Resolvendo link e buscando Place ID...' : '⚡ Converter Link do Celular para 5 Estrelas Direto'}
+                      </span>
+                    </button>
                   </div>
                 )}
 

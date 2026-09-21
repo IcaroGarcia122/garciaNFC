@@ -5,7 +5,41 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(), 
+      tailwindcss(),
+      {
+        name: 'resolve-maps-url',
+        configureServer(server) {
+          server.middlewares.use('/api/resolve-maps-url', async (req, res) => {
+            try {
+              const urlObj = new URL(req.url || '', 'http://localhost:3000');
+              const target = urlObj.searchParams.get('url');
+              if (!target) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'Missing url parameter' }));
+                return;
+              }
+              const response = await fetch(target, {
+                redirect: 'follow',
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+              });
+              const finalUrl = response.url;
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ finalUrl }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err?.message || 'Failed to resolve URL' }));
+            }
+          });
+        }
+      }
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

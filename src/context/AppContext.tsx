@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { 
   DailyOutreach, 
   Sale, 
@@ -17,6 +17,22 @@ import {
   DEMO_EXPENSES,
   STORAGE_KEYS 
 } from '../data/initialData';
+import {
+  db,
+  SALES_COLLECTION,
+  EXPENSES_COLLECTION,
+  OUTREACH_COLLECTION,
+  SETTINGS_COLLECTION,
+  GOALS_DOC,
+  syncSaleToFirebase,
+  deleteSaleFromFirebase,
+  syncExpenseToFirebase,
+  deleteExpenseFromFirebase,
+  syncOutreachToFirebase,
+  deleteOutreachFromFirebase,
+  syncGoalsToFirebase
+} from '../lib/firebase';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 
 interface AppContextType {
   dailyOutreach: DailyOutreach[];
@@ -26,6 +42,8 @@ interface AppContextType {
   stats: SystemStats;
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
+  isCloudConnected: boolean;
+  syncStatus: 'synced' | 'syncing' | 'offline';
   // Daily Outreach actions
   logDailyOutreach: (date: string, count: number, notes?: string) => void;
   quickIncrementToday: (amount?: number) => void;
@@ -50,9 +68,49 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Clean up legacy keys once if present
+  // Pure in-memory state driven entirely by real-time Firestore cloud database
+  const [dailyOutreach, setDailyOutreach] = useState<DailyOutreach[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [goals, setGoals] = useState<SalesGoals>(INITIAL_GOALS);
+
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'offline'>('syncing');
+
+  // One-time automatic migration: if this browser had any prior sales/expenses trapped in local cache,
+  // push them to Firestore so all devices can see them immediately, then wipe local cache permanently.
   useEffect(() => {
     try {
+      const localSales = localStorage.getItem(STORAGE_KEYS.SALES);
+      if (localSales) {
+        const parsed: Sale[] = JSON.parse(localSales);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach(s => syncSaleToFirebase(s).catch(console.error));
+        }
+      }
+
+      const localExpenses = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+      if (localExpenses) {
+        const parsed: Expense[] = JSON.parse(localExpenses);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach(e => syncExpenseToFirebase(e).catch(console.error));
+        }
+      }
+
+      const localOutreach = localStorage.getItem(STORAGE_KEYS.DAILY_OUTREACH);
+      if (localOutreach) {
+        const parsed: DailyOutreach[] = JSON.parse(localOutreach);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach(o => syncOutreachToFirebase(o).catch(console.error));
+        }
+      }
+
+      // Purge all browser cache keys so data is NEVER stored per-browser
+      localStorage.removeItem(STORAGE_KEYS.SALES);
+      localStorage.removeItem(STORAGE_KEYS.EXPENSES);
+      localStorage.removeItem(STORAGE_KEYS.DAILY_OUTREACH);
+      localStorage.removeItem(STORAGE_KEYS.GOALS);
       localStorage.removeItem('garcia_nfc_daily_outreach_v2');
       localStorage.removeItem('garcia_nfc_sales_v2');
       localStorage.removeItem('garcia_nfc_expenses_v2');
@@ -61,79 +119,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.removeItem('garcia_nfc_sales');
       localStorage.removeItem('garcia_nfc_expenses');
       localStorage.removeItem('garcia_nfc_goals');
-    } catch {}
+    } catch (e) {
+      console.warn('LocalStorage migration notice:', e);
+    }
   }, []);
-  // Initialize state with localStorage fallback
-  const [dailyOutreach, setDailyOutreach] = useState<DailyOutreach[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.DAILY_OUTREACH);
-      return saved ? JSON.parse(saved) : INITIAL_DAILY_OUTREACH;
-    } catch {
-      return INITIAL_DAILY_OUTREACH;
-    }
-  });
 
-  const [sales, setSales] = useState<Sale[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SALES);
-      return saved ? JSON.parse(saved) : INITIAL_SALES;
-    } catch {
-      return INITIAL_SALES;
-    }
-  });
-
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-      return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
-    } catch {
-      return INITIAL_EXPENSES;
-    }
-  });
-
-  const [goals, setGoals] = useState<SalesGoals>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.GOALS);
-      return saved ? JSON.parse(saved) : INITIAL_GOALS;
-    } catch {
-      return INITIAL_GOALS;
-    }
-  });
-
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-
-  // Persist to localStorage
+  // Real-time Firestore Synchronizer (Shared central database for all phones and desktops)
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.DAILY_OUTREACH, JSON.stringify(dailyOutreach));
-    } catch (e) {
-      console.error('Failed saving daily outreach to localStorage', e);
-    }
-  }, [dailyOutreach]);
+    let unsubs: Array<() => void> = [];
 
-  useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
-    } catch (e) {
-      console.error('Failed saving sales to localStorage', e);
-    }
-  }, [sales]);
+      // 1. Listen to Sales
+      const salesCol = collection(db, SALES_COLLECTION);
+      const unsubSales = onSnapshot(salesCol, (snapshot) => {
+        setIsCloudConnected(true);
+        setSyncStatus('synced');
+        const cloudSales: Sale[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data() as Sale;
+          cloudSales.push({ ...data, id: docSnap.id });
+        });
+        cloudSales.sort((a, b) => new Date(b.createdAt || b.saleDate).getTime() - new Date(a.createdAt || a.saleDate).getTime());
+        setSales(cloudSales);
+      }, (error) => {
+        console.warn('Firestore Sales listener status:', error);
+        setSyncStatus('offline');
+      });
+      unsubs.push(unsubSales);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
-    } catch (e) {
-      console.error('Failed saving expenses to localStorage', e);
-    }
-  }, [expenses]);
+      // 2. Listen to Expenses
+      const expensesCol = collection(db, EXPENSES_COLLECTION);
+      const unsubExpenses = onSnapshot(expensesCol, (snapshot) => {
+        const cloudExpenses: Expense[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data() as Expense;
+          cloudExpenses.push({ ...data, id: docSnap.id });
+        });
+        cloudExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setExpenses(cloudExpenses);
+      }, (error) => {
+        console.warn('Firestore Expenses listener status:', error);
+      });
+      unsubs.push(unsubExpenses);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
-    } catch (e) {
-      console.error('Failed saving goals to localStorage', e);
+      // 3. Listen to Daily Outreach
+      const outreachCol = collection(db, OUTREACH_COLLECTION);
+      const unsubOutreach = onSnapshot(outreachCol, (snapshot) => {
+        const cloudOutreach: DailyOutreach[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data() as DailyOutreach;
+          cloudOutreach.push({ ...data, id: docSnap.id });
+        });
+        cloudOutreach.sort((a, b) => b.date.localeCompare(a.date));
+        setDailyOutreach(cloudOutreach);
+      }, (error) => {
+        console.warn('Firestore Outreach listener status:', error);
+      });
+      unsubs.push(unsubOutreach);
+
+      // 4. Listen to Goals
+      const goalsDocRef = doc(db, SETTINGS_COLLECTION, GOALS_DOC);
+      const unsubGoals = onSnapshot(goalsDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as SalesGoals;
+          setGoals(prev => ({ ...prev, ...data }));
+        }
+      }, (error) => {
+        console.warn('Firestore Goals listener status:', error);
+      });
+      unsubs.push(unsubGoals);
+
+    } catch (err) {
+      console.error('Failed to initialize Firestore real-time listeners:', err);
+      setSyncStatus('offline');
     }
-  }, [goals]);
+
+    return () => {
+      unsubs.forEach(unsub => unsub());
+    };
+  }, []);
 
   // Comprehensive System Statistics calculation
   const stats: SystemStats = useMemo(() => {
@@ -186,50 +250,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Daily Outreach Actions
   const logDailyOutreach = (date: string, count: number, notes?: string) => {
+    const existing = dailyOutreach.find(d => d.date === date);
+    const entryId = existing?.id || `outreach-${Date.now()}`;
+    const entry: DailyOutreach = {
+      id: entryId,
+      date,
+      count: Math.max(0, count),
+      notes: notes !== undefined ? notes : (existing?.notes || ''),
+      createdAt: existing?.createdAt || new Date().toISOString()
+    };
+
     setDailyOutreach(prev => {
       const existingIndex = prev.findIndex(d => d.date === date);
       if (existingIndex >= 0) {
         const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          count: Math.max(0, count),
-          notes: notes !== undefined ? notes : updated[existingIndex].notes
-        };
+        updated[existingIndex] = entry;
         return updated.sort((a, b) => b.date.localeCompare(a.date));
       } else {
-        const newEntry: DailyOutreach = {
-          id: `outreach-${Date.now()}`,
-          date,
-          count: Math.max(0, count),
-          notes: notes || '',
-          createdAt: new Date().toISOString()
-        };
-        return [newEntry, ...prev].sort((a, b) => b.date.localeCompare(a.date));
+        return [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date));
       }
     });
+
+    syncOutreachToFirebase(entry).catch(err => console.error('Error saving outreach to cloud:', err));
   };
 
   const quickIncrementToday = (amount: number = 1) => {
     const todayStr = new Date().toISOString().split('T')[0];
+    const existing = dailyOutreach.find(d => d.date === todayStr);
+    const updatedCount = existing ? Math.max(0, existing.count + amount) : Math.max(0, amount);
+    const entry: DailyOutreach = {
+      id: existing?.id || `outreach-${Date.now()}`,
+      date: todayStr,
+      count: updatedCount,
+      notes: existing?.notes || 'Registrado via botão rápido',
+      createdAt: existing?.createdAt || new Date().toISOString()
+    };
+
     setDailyOutreach(prev => {
-      const existing = prev.find(d => d.date === todayStr);
       if (existing) {
-        return prev.map(d => d.date === todayStr ? { ...d, count: Math.max(0, d.count + amount) } : d);
+        return prev.map(d => d.date === todayStr ? entry : d);
       } else {
-        const newEntry: DailyOutreach = {
-          id: `outreach-${Date.now()}`,
-          date: todayStr,
-          count: Math.max(0, amount),
-          notes: 'Registrado via botão rápido',
-          createdAt: new Date().toISOString()
-        };
-        return [newEntry, ...prev].sort((a, b) => b.date.localeCompare(a.date));
+        return [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date));
       }
     });
+
+    syncOutreachToFirebase(entry).catch(err => console.error('Error saving outreach to cloud:', err));
   };
 
   const deleteDailyOutreach = (id: string) => {
     setDailyOutreach(prev => prev.filter(d => d.id !== id));
+    deleteOutreachFromFirebase(id).catch(err => console.error('Error deleting outreach from cloud:', err));
   };
 
   // Sale CRUD
@@ -256,10 +326,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       grossProfit,
       profitMarginPercent
     };
+
     setSales(prev => [newSale, ...prev]);
+    syncSaleToFirebase(newSale).catch(err => console.error('Error saving sale to cloud:', err));
   };
 
   const updateSale = (id: string, updated: Partial<Sale>) => {
+    let updatedSaleObj: Sale | null = null;
     setSales(prev => prev.map(s => {
       if (s.id !== id) return s;
       const merged = { ...s, ...updated };
@@ -273,7 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const grossProfit = totalRevenue - totalCost;
       const profitMarginPercent = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-      return {
+      updatedSaleObj = {
         ...merged,
         quantity: qty,
         unitPrice: uPrice,
@@ -284,11 +357,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         grossProfit,
         profitMarginPercent
       };
+      return updatedSaleObj;
     }));
+
+    if (updatedSaleObj) {
+      syncSaleToFirebase(updatedSaleObj).catch(err => console.error('Error updating sale in cloud:', err));
+    }
   };
 
   const deleteSale = (id: string) => {
     setSales(prev => prev.filter(s => s.id !== id));
+    deleteSaleFromFirebase(id).catch(err => console.error('Error deleting sale in cloud:', err));
   };
 
   // Expense CRUD
@@ -298,23 +377,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `exp-${Date.now()}`
     };
     setExpenses(prev => [newExpense, ...prev]);
+    syncExpenseToFirebase(newExpense).catch(err => console.error('Error saving expense to cloud:', err));
   };
 
   const updateExpense = (id: string, updated: Partial<Expense>) => {
-    setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e));
+    let updatedExpenseObj: Expense | null = null;
+    setExpenses(prev => prev.map(e => {
+      if (e.id === id) {
+        updatedExpenseObj = { ...e, ...updated };
+        return updatedExpenseObj;
+      }
+      return e;
+    }));
+
+    if (updatedExpenseObj) {
+      syncExpenseToFirebase(updatedExpenseObj).catch(err => console.error('Error updating expense in cloud:', err));
+    }
   };
 
   const deleteExpense = (id: string) => {
     setExpenses(prev => prev.filter(e => e.id !== id));
+    deleteExpenseFromFirebase(id).catch(err => console.error('Error deleting expense in cloud:', err));
   };
 
   // Goals
   const updateGoals = (newGoals: Partial<SalesGoals>) => {
-    setGoals(prev => ({ ...prev, ...newGoals }));
+    const mergedGoals = { ...goals, ...newGoals };
+    setGoals(mergedGoals);
+    syncGoalsToFirebase(mergedGoals).catch(err => console.error('Error saving goals to cloud:', err));
   };
 
   // Backup & Reset
   const resetToDefaultData = () => {
+    sales.forEach(s => deleteSaleFromFirebase(s.id).catch(console.error));
+    expenses.forEach(e => deleteExpenseFromFirebase(e.id).catch(console.error));
+    dailyOutreach.forEach(o => deleteOutreachFromFirebase(o.id).catch(console.error));
+    syncGoalsToFirebase(INITIAL_GOALS).catch(console.error);
+
     setDailyOutreach([]);
     setSales([]);
     setExpenses([]);
@@ -324,10 +423,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.removeItem(STORAGE_KEYS.SALES);
       localStorage.removeItem(STORAGE_KEYS.EXPENSES);
       localStorage.removeItem(STORAGE_KEYS.GOALS);
-      localStorage.removeItem('garcia_nfc_daily_outreach_v2');
-      localStorage.removeItem('garcia_nfc_sales_v2');
-      localStorage.removeItem('garcia_nfc_expenses_v2');
-      localStorage.removeItem('garcia_nfc_goals_v2');
     } catch {}
   };
 
@@ -336,6 +431,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSales(DEMO_SALES);
     setExpenses(DEMO_EXPENSES);
     setGoals(INITIAL_GOALS);
+    // Sync demo data to cloud as well
+    DEMO_SALES.forEach(s => syncSaleToFirebase(s).catch(console.error));
+    DEMO_EXPENSES.forEach(e => syncExpenseToFirebase(e).catch(console.error));
+    DEMO_DAILY_OUTREACH.forEach(o => syncOutreachToFirebase(o).catch(console.error));
+    syncGoalsToFirebase(INITIAL_GOALS).catch(console.error);
   };
 
   const exportDataJson = () => {
@@ -352,10 +452,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const importDataJson = (jsonData: string): boolean => {
     try {
       const parsed = JSON.parse(jsonData);
-      if (parsed.dailyOutreach && Array.isArray(parsed.dailyOutreach)) setDailyOutreach(parsed.dailyOutreach);
-      if (parsed.sales && Array.isArray(parsed.sales)) setSales(parsed.sales);
-      if (parsed.expenses && Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
-      if (parsed.goals && typeof parsed.goals === 'object') setGoals(parsed.goals);
+      if (parsed.sales && Array.isArray(parsed.sales)) {
+        setSales(parsed.sales);
+        parsed.sales.forEach((s: Sale) => syncSaleToFirebase(s).catch(console.error));
+      }
+      if (parsed.expenses && Array.isArray(parsed.expenses)) {
+        setExpenses(parsed.expenses);
+        parsed.expenses.forEach((e: Expense) => syncExpenseToFirebase(e).catch(console.error));
+      }
+      if (parsed.dailyOutreach && Array.isArray(parsed.dailyOutreach)) {
+        setDailyOutreach(parsed.dailyOutreach);
+        parsed.dailyOutreach.forEach((o: DailyOutreach) => syncOutreachToFirebase(o).catch(console.error));
+      }
+      if (parsed.goals && typeof parsed.goals === 'object') {
+        setGoals(parsed.goals);
+        syncGoalsToFirebase(parsed.goals).catch(console.error);
+      }
       return true;
     } catch (e) {
       console.error('Failed to import data', e);
@@ -373,6 +485,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         stats,
         activeTab,
         setActiveTab,
+        isCloudConnected,
+        syncStatus,
         logDailyOutreach,
         quickIncrementToday,
         deleteDailyOutreach,

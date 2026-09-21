@@ -124,6 +124,8 @@ export const SaleModal: React.FC<SaleModalProps> = ({
     }
   };
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   // Smart Google Maps link conversion on paste or change
   const handleGoogleUrlInput = (rawVal: string) => {
     setGoogleReviewUrl(rawVal);
@@ -131,9 +133,10 @@ export const SaleModal: React.FC<SaleModalProps> = ({
       const parsed = parseGoogleMapsInput(rawVal);
       if (parsed.reviewUrl && parsed.reviewUrl !== rawVal) {
         setGoogleReviewUrl(parsed.reviewUrl);
-        setDetectedUrlLabel(parsed.label);
-      } else {
-        setDetectedUrlLabel(parsed.label);
+      }
+      setDetectedUrlLabel(parsed.label);
+      if (parsed.businessName && !companyName.trim()) {
+        setCompanyName(parsed.businessName);
       }
     } else {
       setDetectedUrlLabel('');
@@ -151,7 +154,13 @@ export const SaleModal: React.FC<SaleModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim()) return;
+    if (!companyName.trim()) {
+      setValidationError('Por favor, informe o nome da empresa compradora.');
+      const el = document.getElementById('sale-company-input');
+      if (el) el.focus();
+      return;
+    }
+    setValidationError(null);
 
     onSave({
       companyName: companyName.trim(),
@@ -205,27 +214,39 @@ export const SaleModal: React.FC<SaleModalProps> = ({
           </button>
         </div>
 
-        {/* Form - Smooth internal scrolling on mobile & desktop */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 overscroll-contain">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            {/* Empresa Nome */}
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Nome da Empresa Compradora *
-              </label>
-              <div className="relative">
-                <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3.5 sm:top-3" />
-                <input
-                  id="sale-company-input"
-                  type="text"
-                  required
-                  placeholder="Nome da loja, restaurante, barbearia, clínica..."
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
-                />
+        {/* Form - Wrapping both inputs and sticky actions */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Scrollable inputs */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 overscroll-contain">
+            {validationError && (
+              <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2 animate-shake">
+                <span>⚠️</span>
+                <span>{validationError}</span>
               </div>
-            </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              {/* Empresa Nome */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Nome da Empresa Compradora *
+                </label>
+                <div className="relative">
+                  <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3.5 sm:top-3" />
+                  <input
+                    id="sale-company-input"
+                    type="text"
+                    required
+                    placeholder="Nome da loja, restaurante, barbearia, clínica..."
+                    value={companyName}
+                    onChange={(e) => {
+                      setCompanyName(e.target.value);
+                      if (validationError) setValidationError(null);
+                    }}
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE]"
+                  />
+                </div>
+              </div>
 
             {/* Segmento */}
             <div>
@@ -560,27 +581,28 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               className="w-full px-3 py-2 bg-[#060D1A] border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#0066FE] resize-none"
             />
           </div>
-        </form>
+        </div>
 
-        {/* Actions - Sticky at bottom */}
+        {/* Actions - Sticky at bottom of form */}
         <div className="shrink-0 flex items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-800 bg-[#060D1A]/95 backdrop-blur-md">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[44px] flex items-center justify-center"
+            className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[44px] flex items-center justify-center cursor-pointer"
           >
             Cancelar
           </button>
           <button
             id="save-sale-submit-btn"
-            onClick={handleSubmit}
-            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#0052FF] to-[#0072FF] hover:brightness-110 shadow-lg shadow-blue-500/25 transition-all min-h-[44px]"
+            type="submit"
+            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#0052FF] to-[#0072FF] hover:brightness-110 shadow-lg shadow-blue-500/25 transition-all min-h-[44px] cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>{saleToEdit ? 'Atualizar Venda' : 'Salvar Venda (R$ 80/placa)'}</span>
           </button>
         </div>
-      </div>
+      </form>
     </div>
+  </div>
   );
 };

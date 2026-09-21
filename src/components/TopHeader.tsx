@@ -16,7 +16,8 @@ import {
   Target,
   BarChart3,
   Wrench,
-  Calendar
+  Calendar,
+  Cloud
 } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { GarciaIcon } from './GarciaLogo';
@@ -67,7 +68,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenDailyOutreach,
   onOpenNewExpense
 }) => {
-  const { activeTab, stats, exportDataJson, importDataJson, resetToDefaultData, loadDemoData } = useApp();
+  const { activeTab, stats, isCloudConnected, exportDataJson, importDataJson, resetToDefaultData, loadDemoData } = useApp();
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   const currentTab = TAB_METADATA[activeTab] || TAB_METADATA.dashboard!;
@@ -149,10 +150,22 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <span>/</span>
               <span className="text-slate-300 font-semibold">{currentTab.title}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-white truncate">
                 {currentTab.title}
               </h1>
+              <div 
+                className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  isCloudConnected 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]' 
+                    : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+                }`}
+                title={isCloudConnected ? "Banco de dados Firebase conectado: Celular e Computador sincronizados em tempo real" : "Conectando ao banco de dados na nuvem..."}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${isCloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-ping'}`} />
+                <Cloud className="w-3 h-3" />
+                <span className="hidden sm:inline">{isCloudConnected ? 'Nuvem Conectada' : 'Sincronizando...'}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -232,7 +245,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#0B1528] border border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150 text-xs"
               >
                 <div className="px-3 py-1.5 border-b border-slate-800/80 text-slate-400 uppercase tracking-wider text-[10px] font-bold">
-                  GARCIA® Backup & Dados
+                  GARCIA® Nuvem Central
                 </div>
                 <button
                   onClick={() => { onOpenDailyOutreach(); setShowSettingsMenu(false); }}

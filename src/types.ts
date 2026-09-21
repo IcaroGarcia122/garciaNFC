@@ -57,6 +57,7 @@ export interface Sale {
   paymentStatus: PaymentStatus;
   installments?: number;
   saleDate: string; // YYYY-MM-DD
+  createdAt?: string;
   nfcStatus: NfcProductionStatus;
   googleReviewUrl: string;
   notes?: string;
