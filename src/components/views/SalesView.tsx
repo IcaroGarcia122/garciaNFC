@@ -55,6 +55,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [nfcFilter, setNfcFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
 
   const filteredSales = useMemo(() => {
     return sales.filter(s => {
@@ -87,9 +88,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
   };
 
   const handleDelete = (sale: Sale) => {
-    if (confirm(`Deseja excluir a venda para "${sale.companyName}"?`)) {
-      deleteSale(sale.id);
-    }
+    setSaleToDelete(sale);
   };
 
   const exportSalesCsv = () => {
@@ -484,6 +483,52 @@ export const SalesView: React.FC<SalesViewProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Modal In-App de Confirmação para Excluir Venda (Funciona perfeitamente em iframes e celulares sem depender de window.confirm) */}
+      {saleToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-[#0A162B] border border-rose-500/40 rounded-2xl p-5 sm:p-6 shadow-2xl text-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Excluir Registro de Venda?</h3>
+                <p className="text-xs text-slate-400">Esta ação removerá a venda imediatamente da lista e do banco.</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-[#060D1A] rounded-xl border border-slate-800 text-xs space-y-1">
+              <p className="font-semibold text-white truncate">{saleToDelete.companyName || 'Cliente Avulso'}</p>
+              <p className="text-slate-400">
+                {saleToDelete.quantity} {saleToDelete.quantity === 1 ? 'placa' : 'placas'} • {formatCurrency(saleToDelete.totalRevenue)}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setSaleToDelete(null)}
+                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                id="confirm-delete-sale-btn"
+                type="button"
+                onClick={() => {
+                  deleteSale(saleToDelete.id);
+                  setSaleToDelete(null);
+                }}
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-600/30 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Sim, Apagar Venda</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

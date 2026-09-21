@@ -156,31 +156,31 @@ export const SaleModal: React.FC<SaleModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim()) {
-      setValidationError('Por favor, informe o nome da empresa compradora.');
-      const el = document.getElementById('sale-company-input');
-      if (el) el.focus();
-      return;
-    }
     setValidationError(null);
 
+    const finalCompanyName = companyName.trim() || 'Cliente Avulso (Placa NFC)';
+    const qty = Number(quantity) > 0 ? Number(quantity) : 1;
+    const uPrice = Number(unitPrice) >= 0 ? Number(unitPrice) : 80.00;
+    const disc = Number(discount) >= 0 ? Number(discount) : 0;
+    const uCost = Number(unitCost) >= 0 ? Number(unitCost) : 12.80;
+
     const salePayload = {
-      companyName: companyName.trim(),
-      segment,
+      companyName: finalCompanyName,
+      segment: segment || 'Restaurante / Bar',
       contactName: contactName.trim(),
       phone: phone.trim(),
-      plateModel,
-      quantity: Number(quantity) || 1,
-      unitPrice: Number(unitPrice) || 80.00,
-      discount: Number(discount) || 0,
-      unitCost: Number(unitCost) || 12.80,
-      paymentMethod,
-      paymentStatus,
-      installments: paymentStatus === 'parcelado' ? installments : undefined,
-      saleDate,
-      nfcStatus,
-      googleReviewUrl: googleReviewUrl.trim(),
-      notes: notes.trim()
+      plateModel: plateModel || 'Placa Acrílico Balcão Google NFC + QR',
+      quantity: qty,
+      unitPrice: uPrice,
+      discount: disc,
+      unitCost: uCost,
+      paymentMethod: paymentMethod || 'PIX',
+      paymentStatus: paymentStatus || 'pago',
+      installments: paymentStatus === 'parcelado' ? (installments || 1) : undefined,
+      saleDate: saleDate || new Date().toISOString().split('T')[0],
+      nfcStatus: nfcStatus || 'aguardando_gravacao',
+      googleReviewUrl: (googleReviewUrl || '').trim(),
+      notes: (notes || '').trim()
     };
 
     if (typeof onSave === 'function') {
@@ -227,7 +227,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
         </div>
 
         {/* Form - Wrapping both inputs and sticky actions */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Scrollable inputs */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 overscroll-contain">
             {validationError && (
@@ -241,15 +241,14 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               {/* Empresa Nome */}
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Nome da Empresa Compradora *
+                  Nome da Empresa / Cliente <span className="text-slate-400 font-normal lowercase">(opcional)</span>
                 </label>
                 <div className="relative">
                   <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3.5 sm:top-3" />
                   <input
                     id="sale-company-input"
                     type="text"
-                    required
-                    placeholder="Nome da loja, restaurante, barbearia, clínica..."
+                    placeholder="Nome da loja, restaurante, barbearia (ou deixe vazio para cliente avulso)..."
                     value={companyName}
                     onChange={(e) => {
                       setCompanyName(e.target.value);
@@ -305,7 +304,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                 id="sale-quantity-input"
                 type="number"
                 min="1"
-                required
                 value={quantity}
                 onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                 className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white font-bold text-center focus:outline-none focus:border-[#0066FE]"
@@ -323,7 +321,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   id="sale-unit-price-input"
                   type="number"
                   step="0.01"
-                  required
                   value={unitPrice}
                   onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
                   className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white font-bold focus:outline-none focus:border-[#0066FE]"
@@ -402,7 +399,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   id="sale-unit-cost-input"
                   type="number"
                   step="0.01"
-                  required
                   value={unitCost}
                   onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
                   className="w-full pl-9 pr-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white font-bold focus:outline-none focus:border-[#0066FE]"
@@ -483,7 +479,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
               </label>
               <input
                 type="date"
-                required
                 value={saleDate}
                 onChange={(e) => setSaleDate(e.target.value)}
                 className="w-full px-3 py-2.5 bg-[#060D1A] border border-slate-700/80 rounded-xl text-base sm:text-sm text-white focus:outline-none focus:border-[#0066FE]"

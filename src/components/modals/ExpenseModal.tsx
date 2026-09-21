@@ -72,29 +72,19 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description.trim()) {
-      setValidationError('Por favor, informe a descrição da despesa.');
-      const el = document.getElementById('expense-desc-input');
-      if (el) el.focus();
-      return;
-    }
-    const numAmount = Number(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      setValidationError('Por favor, informe um valor maior que R$ 0,00.');
-      const el = document.getElementById('expense-amount-input');
-      if (el) el.focus();
-      return;
-    }
     setValidationError(null);
 
+    const finalDescription = description.trim() || category || 'Despesa Operacional';
+    const numAmount = Number(amount) >= 0 ? Number(amount) : 0;
+
     const expensePayload = {
-      description: description.trim(),
+      description: finalDescription,
       category,
       amount: numAmount,
-      date,
+      date: date || new Date().toISOString().split('T')[0],
       paymentMethod,
       status,
-      notes: notes.trim()
+      notes: (notes || '').trim()
     };
 
     if (typeof onSave === 'function') {
@@ -140,7 +130,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
         </div>
 
         {/* Form wrapping inputs and sticky footer */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 overscroll-contain">
             {validationError && (
               <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
@@ -151,13 +141,12 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Descrição da Despesa *
+                Descrição da Despesa <span className="text-slate-400 font-normal lowercase">(opcional)</span>
               </label>
               <input
                 id="expense-desc-input"
                 type="text"
-                required
-                placeholder="Ex: Lote de 50 tags NFC, Combustível, Embalagens..."
+                placeholder="Ex: Lote de 50 tags NFC, Combustível, Embalagens (ou deixe em branco)..."
                 value={description}
                 onChange={(e) => {
                   setDescription(e.target.value);
@@ -186,14 +175,12 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Valor (R$) *
+                  Valor (R$)
                 </label>
                 <input
                   id="expense-amount-input"
                   type="number"
                   step="0.01"
-                  required
-                  min="0.01"
                   placeholder="0,00"
                   value={amount || ''}
                   onChange={(e) => {
