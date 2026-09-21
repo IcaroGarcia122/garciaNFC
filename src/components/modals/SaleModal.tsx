@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sale, NfcPlateModel, PaymentMethod, PaymentStatus, NfcProductionStatus, SegmentType } from '../../types';
+import { useApp } from '../../context/AppContext';
 import { 
   X, 
   ShoppingBag, 
@@ -19,7 +20,7 @@ import { formatCurrency, formatPercent, parseGoogleMapsInput } from '../../utils
 interface SaleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (saleData: Omit<Sale, 'id' | 'grossProfit' | 'profitMarginPercent' | 'totalRevenue' | 'totalCost'>) => void;
+  onSave?: (saleData: Omit<Sale, 'id' | 'grossProfit' | 'profitMarginPercent' | 'totalRevenue' | 'totalCost'>) => void;
   saleToEdit?: Sale | null;
 }
 
@@ -57,6 +58,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   onSave,
   saleToEdit
 }) => {
+  const { addSale, updateSale } = useApp();
   const [companyName, setCompanyName] = useState('');
   const [segment, setSegment] = useState<SegmentType>('Restaurante / Bar');
   const [contactName, setContactName] = useState('');
@@ -162,7 +164,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
     }
     setValidationError(null);
 
-    onSave({
+    const salePayload = {
       companyName: companyName.trim(),
       segment,
       contactName: contactName.trim(),
@@ -179,7 +181,17 @@ export const SaleModal: React.FC<SaleModalProps> = ({
       nfcStatus,
       googleReviewUrl: googleReviewUrl.trim(),
       notes: notes.trim()
-    });
+    };
+
+    if (typeof onSave === 'function') {
+      onSave(salePayload);
+    } else {
+      if (saleToEdit) {
+        updateSale(saleToEdit.id, salePayload);
+      } else {
+        addSale(salePayload);
+      }
+    }
     onClose();
   };
 

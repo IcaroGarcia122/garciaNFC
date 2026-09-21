@@ -80,6 +80,7 @@ export interface Expense {
   paymentMethod: PaymentMethod;
   status: 'pago' | 'pendente';
   notes?: string;
+  createdAt?: string;
 }
 
 export interface SalesGoals {

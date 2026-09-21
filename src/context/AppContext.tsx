@@ -155,7 +155,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const data = docSnap.data() as Expense;
           cloudExpenses.push({ ...data, id: docSnap.id });
         });
-        cloudExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        cloudExpenses.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
         setExpenses(cloudExpenses);
       }, (error) => {
         console.warn('Firestore Expenses listener status:', error);
@@ -321,6 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       discount: disc,
       unitCost: uCost,
       id: `sale-${Date.now()}`,
+      createdAt: saleData.createdAt || new Date().toISOString(),
       totalRevenue,
       totalCost,
       grossProfit,
@@ -374,7 +375,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addExpense = (expenseData: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
       ...expenseData,
-      id: `exp-${Date.now()}`
+      id: `exp-${Date.now()}`,
+      createdAt: expenseData.createdAt || new Date().toISOString()
     };
     setExpenses(prev => [newExpense, ...prev]);
     syncExpenseToFirebase(newExpense).catch(err => console.error('Error saving expense to cloud:', err));

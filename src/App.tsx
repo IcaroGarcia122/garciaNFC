@@ -18,7 +18,7 @@ import { GarciaIcon } from './components/GarciaLogo';
 import { LayoutDashboard, ShoppingBag, DollarSign, SmartphoneNfc, Plus } from 'lucide-react';
 
 const MainContent: React.FC = () => {
-  const { activeTab, setActiveTab, stats } = useApp();
+  const { activeTab, setActiveTab, stats, addSale, updateSale, addExpense, updateExpense } = useApp();
 
   // Modal States
   const [isDailyOutreachModalOpen, setIsDailyOutreachModalOpen] = useState(false);
@@ -47,6 +47,16 @@ const MainContent: React.FC = () => {
     setIsSaleModalOpen(true);
   };
 
+  const handleSaveSale = (saleData: Omit<Sale, 'id' | 'grossProfit' | 'profitMarginPercent' | 'totalRevenue' | 'totalCost'>) => {
+    if (editingSale) {
+      updateSale(editingSale.id, saleData);
+    } else {
+      addSale(saleData);
+    }
+    setIsSaleModalOpen(false);
+    setEditingSale(undefined);
+  };
+
   const handleOpenNewExpense = () => {
     setEditingExpense(undefined);
     setIsExpenseModalOpen(true);
@@ -55,6 +65,16 @@ const MainContent: React.FC = () => {
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
     setIsExpenseModalOpen(true);
+  };
+
+  const handleSaveExpense = (expenseData: Omit<Expense, 'id'>) => {
+    if (editingExpense) {
+      updateExpense(editingExpense.id, expenseData);
+    } else {
+      addExpense(expenseData);
+    }
+    setIsExpenseModalOpen(false);
+    setEditingExpense(undefined);
   };
 
   return (
@@ -204,14 +224,23 @@ const MainContent: React.FC = () => {
 
       <SaleModal
         isOpen={isSaleModalOpen}
-        onClose={() => setIsSaleModalOpen(false)}
+        onClose={() => {
+          setIsSaleModalOpen(false);
+          setEditingSale(undefined);
+        }}
         saleToEdit={editingSale}
+        onSave={handleSaveSale}
       />
 
       <ExpenseModal
         isOpen={isExpenseModalOpen}
-        onClose={() => setIsExpenseModalOpen(false)}
+        onClose={() => {
+          setIsExpenseModalOpen(false);
+          setEditingExpense(undefined);
+        }}
         expenseToEdit={editingExpense}
+        initialData={editingExpense}
+        onSave={handleSaveExpense}
       />
     </div>
   );

@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Expense, ExpenseCategory, PaymentMethod } from '../../types';
+import { useApp } from '../../context/AppContext';
 import { X, Receipt, DollarSign, Tag, CheckCircle2 } from 'lucide-react';
 
 interface ExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (expenseData: Omit<Expense, 'id'>) => void;
+  onSave?: (expenseData: Omit<Expense, 'id'>) => void;
   initialData?: Expense | null;
+  expenseToEdit?: Expense | null;
 }
 
 const CATEGORIES: ExpenseCategory[] = [
@@ -30,20 +32,41 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialData
+  initialData,
+  expenseToEdit
 }) => {
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [category, setCategory] = useState<ExpenseCategory>(
-    initialData?.category || 'Matéria-Prima (Chips NFC / Acrílicos)'
-  );
-  const [amount, setAmount] = useState<number>(initialData?.amount || 0);
-  const [date, setDate] = useState<string>(
-    initialData?.date || new Date().toISOString().split('T')[0]
-  );
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || 'PIX');
-  const [status, setStatus] = useState<'pago' | 'pendente'>(initialData?.status || 'pago');
-  const [notes, setNotes] = useState(initialData?.notes || '');
+  const { addExpense, updateExpense } = useApp();
+  const activeExpense = expenseToEdit || initialData;
+
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<ExpenseCategory>('Matéria-Prima (Chips NFC / Acrílicos)');
+  const [amount, setAmount] = useState<number>(0);
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
+  const [status, setStatus] = useState<'pago' | 'pendente'>('pago');
+  const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeExpense) {
+      setDescription(activeExpense.description || '');
+      setCategory(activeExpense.category || 'Matéria-Prima (Chips NFC / Acrílicos)');
+      setAmount(activeExpense.amount || 0);
+      setDate(activeExpense.date || new Date().toISOString().split('T')[0]);
+      setPaymentMethod(activeExpense.paymentMethod || 'PIX');
+      setStatus(activeExpense.status || 'pago');
+      setNotes(activeExpense.notes || '');
+    } else {
+      setDescription('');
+      setCategory('Matéria-Prima (Chips NFC / Acrílicos)');
+      setAmount(0);
+      setDate(new Date().toISOString().split('T')[0]);
+      setPaymentMethod('PIX');
+      setStatus('pago');
+      setNotes('');
+    }
+    setValidationError(null);
+  }, [activeExpense, isOpen]);
 
   if (!isOpen) return null;
 
@@ -64,15 +87,25 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     }
     setValidationError(null);
 
-    onSave({
+    const expensePayload = {
       description: description.trim(),
       category,
       amount: numAmount,
       date,
       paymentMethod,
       status,
-      notes: notes.trim() || undefined
-    });
+      notes: notes.trim()
+    };
+
+    if (typeof onSave === 'function') {
+      onSave(expensePayload);
+    } else {
+      if (activeExpense?.id) {
+        updateExpense(activeExpense.id, expensePayload);
+      } else {
+        addExpense(expensePayload);
+      }
+    }
     onClose();
   };
 
