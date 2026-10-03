@@ -105,6 +105,8 @@ const MainContent: React.FC = () => {
               onOpenNewSale={handleOpenNewSale}
               onOpenDailyOutreach={handleOpenDailyOutreach}
               onOpenNewExpense={handleOpenNewExpense}
+              onEditSale={handleEditSale}
+              onEditExpense={handleEditExpense}
             />
           )}
 
